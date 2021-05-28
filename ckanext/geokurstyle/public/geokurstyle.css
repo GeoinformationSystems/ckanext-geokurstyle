@@ -2,14 +2,16 @@
   border-radius: 0 0 0 0;
 }
 
+.btn.btn-default:active,
+.btn.btn-default:focus {
+  outline: none;
+}
 
 
 .btn.btn-primary:active,
 .btn.btn-primary:focus{
   border-radius: 0 0 0 0;
-  box-shadow: none;
   outline: none;
-
 }
 
 .btn-primary {
