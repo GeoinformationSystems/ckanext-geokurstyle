@@ -131,22 +131,22 @@
 
         const tblBody = document.createElement("tbody");
         for (let key of key_list) {
-            var row = document.createElement("tr");
-            var cellName = document.createElement("td");
+            const row = document.createElement("tr");
+            const cellName = document.createElement("td");
             cellName.setAttribute('scope', "row");
             cellName.setAttribute('class', 'dataset-label');
-            var cellNameText = document.createTextNode(label_dict[key]);
+            const cellNameText = document.createTextNode(label_dict[key]);
             cellName.appendChild(cellNameText);
-            var cellValue = document.createElement("td");
+            const cellValue = document.createElement("td");
             cellValue.setAttribute('class', 'dataset-details');
             if (value_dict[key]) {
-                var cellValueText = document.createElement("a");
+                const cellValueText = document.createElement("a");
                 cellValueText.setAttribute("href", value_dict[key]);
                 cellValueText.textContent = (value_dict[key]);
                 cellValue.appendChild(cellValueText);
             }
             else {
-                var cellValueText = document.createTextNode("");
+                const cellValueText = document.createTextNode("");
                 cellValue.appendChild(cellValueText);
             }
             row.appendChild(cellName);
