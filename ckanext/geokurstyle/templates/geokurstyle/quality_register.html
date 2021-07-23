@@ -1,0 +1,228 @@
+{% extends 'page.html' %}
+
+
+{% block breadcrumb_content %}
+<li class='active'>{{ _('Quality Register') }}</li>
+{% endblock %}
+
+{% block primary %}
+<div id='quality-register' class=container style='margin-bottom: 150px;'>
+    <h1>GeoKur QualityRegister</h1>
+
+    <p>
+        This page displays all available data quality metrics, dimensions and categories. Each metric is defined in a
+        certain dimension and each dimension is defined in a certain category. New
+        metrics can be proposed to the curator by using
+        the add metric button.
+    </p>
+    <!-- check if the current user is in a group, where they are allowed to create datasets. If so, the button for addign a process is shown.
+    This is only useful if users that are not member of a group are not permitted to create datasets.
+    (ckan.ini: ckan.auth.create_unowned_dataset = False) -->
+    {% if h.organizations_available(permission='create_dataset') %}
+    <div class='page_primary_action' style='margin-bottom: 50px;'>
+        <a class='btn btn-primary' id='add_button' style='float: right;' href='/add-metric'><i
+                class='fa fa-plus-square'></i> Add
+            Metric</a>
+    </div>
+    {% endif %}
+    <div id='quality-descriptions' class=container style='margin-bottom: 150px;'>
+    </div>
+</div>
+<script>
+
+    async function sparql(endpoint, query) {
+        const url = endpoint +
+            '?query=' + encodeURIComponent(query) +
+            '&format=json';
+        const response = await fetch(url);
+        return response.json();
+    }
+
+    async function getNodes(rdf_class) {
+        const prefixes = [
+            'PREFIX dqv: <http://www.w3.org/ns/dqv#>',
+            'PREFIX dct: <http://purl.org/dc/terms/>',
+            'PREFIX xsd: <https://www.w3.org/TR/xmlschema-2/#>',
+            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+            'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>',
+            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+            'PREFIX gkq: <https://geokur-dmp.geo.tu-dresden.de/pages/quality-elements#>'
+        ];
+        const select = [
+            'SELECT DISTINCT ?node ?nodeLabel ?description ?datatype ?dimension ?category WHERE {',
+            '?node a ' + rdf_class + ' .', ,
+            'OPTIONAL {?node skos:prefLabel ?nodeLabel .}',
+            'OPTIONAL {?node skos:definition ?description .}',
+            'OPTIONAL {?node dqv:expectedDataType ?datatype.}',
+            'OPTIONAL {?node dqv:inDimension ?dimension .}',
+            'OPTIONAL {?node dqv:inCategory ?category .}',
+            '} ORDER BY ASC(str(?nodeLabel))'
+        ];
+        query = prefixes.concat(select).join(' ');
+        response = await sparql('https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql', query)
+
+        let nodes = {};
+        for (let binding of response.results.bindings) {
+            let id = binding.node.value;
+            let label = id;
+            nodes[id] = {};
+            nodes[id].id = id;
+            if (binding.nodeLabel) {
+                label = binding.nodeLabel.value;
+            }
+            nodes[id].label = label;
+            if (binding.description) {
+                nodes[id].description = binding.description.value;
+            }
+            if (binding.datatype) {
+                nodes[id].datatype = binding.datatype.value;
+            }
+            if (binding.dimension) {
+                nodes[id].dimension = binding.dimension.value;
+            }
+            if (binding.category) {
+                nodes[id].category = binding.category.value;
+            }
+        }
+        return nodes;
+    }
+
+    function buildMetaIntro(id, label, description) {
+        const meta_intro_div = document.createElement('div');
+        meta_intro_div.setAttribute('id', id);
+        const title = document.createElement('h3');
+        const title_content = document.createElement('a');
+        title_content.setAttribute('href', id);
+        title_content.textContent = label;
+        title.appendChild(title_content);
+        meta_intro_div.appendChild(title);
+
+        if (description) {
+            meta_intro_div.appendChild(
+                document.createElement('p')
+                    .appendChild(
+                        document.createTextNode(
+                            description
+                        )
+                    )
+            );
+            meta_intro_div.appendChild(document.createElement('br'));
+            meta_intro_div.appendChild(document.createElement('br'));
+        }
+        return meta_intro_div;
+    }
+
+    function buildMetaTable(key_list, label_dict, value_dict) {
+        const tbl = document.createElement("table");
+        tbl.setAttribute("class", "table table-striped table-bordered table-condensed");
+
+        const tblHead = document.createElement("thead")
+        const headRow = document.createElement("tr")
+        const field = document.createElement("th")
+        field.setAttribute('scope', 'col')
+        field.textContent = "Field"
+        const value = document.createElement("th")
+        value.setAttribute('scope', 'col')
+        value.textContent = "Value"
+        headRow.appendChild(field)
+        headRow.appendChild(value)
+        tblHead.appendChild(headRow)
+        tbl.appendChild(tblHead)
+
+        const tblBody = document.createElement("tbody");
+        for (let key of key_list) {
+            var row = document.createElement("tr");
+            var cellName = document.createElement("td");
+            cellName.setAttribute('scope', "row");
+            cellName.setAttribute('class', 'dataset-label');
+            var cellNameText = document.createTextNode(label_dict[key]);
+            cellName.appendChild(cellNameText);
+            var cellValue = document.createElement("td");
+            cellValue.setAttribute('class', 'dataset-details');
+            if (value_dict[key]) {
+                var cellValueText = document.createElement("a");
+                cellValueText.setAttribute("href", value_dict[key]);
+                cellValueText.textContent = (value_dict[key]);
+                cellValue.appendChild(cellValueText);
+            }
+            else {
+                var cellValueText = document.createTextNode("");
+                cellValue.appendChild(cellValueText);
+            }
+            row.appendChild(cellName);
+            row.appendChild(cellValue);
+            tblBody.appendChild(row);
+        }
+
+        tbl.appendChild(tblBody);
+        return tbl;
+    }
+
+    async function generateHTML() {
+        await getNodes('dqv:Metric').then(metrics => {
+            const headline = document.createElement('h1');
+            headline.textContent = 'Metrics';
+            document.getElementById('quality-descriptions').appendChild(headline);
+            for (let id of Object.keys(metrics)) {
+                const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description);
+                const key_list = [
+                    'id',
+                    'datatype',
+                    'dimension'
+                ];
+                const label_dict = {
+                    'id': 'IRI',
+                    'datatype': 'Expected Datatype',
+                    'dimension': 'Dimension'
+                };
+                const table = buildMetaTable(key_list, label_dict, metrics[id])
+                metric_div.appendChild(table);
+                document.getElementById('quality-descriptions').appendChild(metric_div);
+            }
+        });
+        await getNodes('dqv:Dimension').then(dimensions => {
+            const headline = document.createElement('h1');
+            headline.textContent = 'Dimensions';
+            document.getElementById('quality-descriptions').appendChild(headline);
+            for (let id of Object.keys(dimensions)) {
+                const dimension_div = buildMetaIntro(id, dimensions[id].label, dimensions[id].description);
+                const key_list = [
+                    'id',
+                    'category'
+                ];
+                const label_dict = {
+                    'id': 'IRI',
+                    'category': 'Category'
+                };
+                const table = buildMetaTable(key_list, label_dict, dimensions[id])
+                dimension_div.appendChild(table);
+                document.getElementById('quality-descriptions').appendChild(dimension_div);
+            }
+        });
+        await getNodes('dqv:Category').then(categories => {
+            const headline = document.createElement('h1');
+            headline.textContent = 'Categories';
+            document.getElementById('quality-descriptions').appendChild(headline);
+            for (let id of Object.keys(categories)) {
+                const category_div = buildMetaIntro(id, categories[id].label, categories[id].description);
+                const key_list = [
+                    'id'
+                ];
+                const label_dict = {
+                    'id': 'IRI'
+                };
+                const table = buildMetaTable(key_list, label_dict, categories[id])
+                category_div.appendChild(table);
+                document.getElementById('quality-descriptions').appendChild(category_div);
+            }
+        });
+    }
+
+    generateHTML()
+
+</script>
+
+<!-- {% asset 'ckanext-geokurmeta/display_processes' %} -->
+{% block secondary %}{% endblock %}
+
+{% endblock %}

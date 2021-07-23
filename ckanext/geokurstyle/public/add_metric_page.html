@@ -1,0 +1,248 @@
+<head>
+    <!-- dependencies (jquery, handlebars and bootstrap) -->
+    <script type="text/javascript" src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript"
+        src="//cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.5/handlebars.min.js"></script>
+    <link type="text/css" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" rel="stylesheet" />
+    <script type="text/javascript" src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+    <!-- alpaca -->
+    <link type="text/css" href="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.css"
+        rel="stylesheet" />
+    <script type="text/javascript"
+        src="//cdn.jsdelivr.net/npm/alpaca@1.5.27/dist/alpaca/bootstrap/alpaca.min.js"></script>
+
+    <link rel="stylesheet" href="geokurstyle.css">
+</head>
+
+
+<body>
+
+    <div id="metric-input-form"></div>
+    <script>
+
+
+
+        async function sparql(endpoint, query) {
+            const url = endpoint +
+                '?query=' + encodeURIComponent(query) +
+                '&format=json';
+            const response = await fetch(url);
+            return response.json();
+        }
+
+        async function getNodes(rdf_class) {
+            const prefixes = [
+                'PREFIX dqv: <http://www.w3.org/ns/dqv#>',
+                'PREFIX dct: <http://purl.org/dc/terms/>',
+                'PREFIX xsd: <https://www.w3.org/TR/xmlschema-2/#>',
+                'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+                'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>',
+                'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+                'PREFIX gkq: <https://geokur-dmp.geo.tu-dresden.de/pages/quality-elements#>'
+            ];
+            const select = [
+                'SELECT DISTINCT ?node ?nodeLabel  WHERE {',
+                '?node a ' + rdf_class + ' .',
+                'OPTIONAL {?node dct:title ?nodeLabel .}',
+                'OPTIONAL {?node skos:prefLabel ?nodeLabel .}',
+                'OPTIONAL {?node rdfs:label ?nodeLabel .}',
+                '} ORDER BY ASC(str(?nodeLabel))'
+            ];
+            query = prefixes.concat(select).join(' ');
+            response = await sparql("https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql", query)
+
+            let nodes = { ids: [], labels: [] };
+            for (let binding of response.results.bindings) {
+                let id = binding.node.value;
+                let label = id;
+                if (binding.nodeLabel) {
+                    label = binding.nodeLabel.value;
+                }
+                nodes.ids.push(id);
+                nodes.labels.push(label);
+            }
+            return nodes;
+        }
+
+        // get existing metrics for validation of id
+        getNodes("dqv:Metric").then(metrics => {
+            $("#metric-input-form").alpaca({
+                "data": {
+                    "uri": "https://geokur-dmp.geo.tu-dresden.de/quality-register#"
+                },
+                "schema": {
+                    "title": "Add new quality metric to quality store",
+                    "type": "object",
+                    "properties": {
+                        "label": {
+                            "type": "string",
+                            "title": "Label",
+                            "required": true
+                        },
+                        "id": {
+                            "type": "string",
+                            "title": "ID",
+                            "required": true
+                        },
+                        "uri": {
+                            "type": "string",
+                            "title": "URI",
+                            "format": "url"
+                        },
+                        "description": {
+                            "type": "string",
+                            "title": "Description",
+                            "required": true
+                        },
+                        "in-dimension": {
+                            "title": "In Dimension",
+                            "enum": [],
+                            "required": true
+                        },
+                        "expected-type": {
+                            "title": "Expected Data Type",
+                            "enum": [],
+                            "required": true
+                        }
+                        // "in-category": {
+                        //     "title": "In Category",
+                        //     "enum": [],
+                        //     "required": true
+                        // }
+                    }
+                },
+                "options": {
+                    "fields": {
+                        "label": {
+                            "id": "label",
+                        },
+                        "id": {
+                            "id": "id",
+                            "validator": function (callback) {
+                                if (this.getValue().match(/^[a-z0-9]+$/i)) {
+                                    callback({
+                                        "status": true
+                                    })
+                                } else {
+                                    callback({
+                                        "status": false,
+                                        "message": "Only alphanumerical characters allowed in ID!"
+                                    })
+                                }
+                            }
+                        },
+                        "uri": {
+                            "id": "uri",
+                            "disabled": true,
+                            "validator": function (callback) {
+                                if (metrics.ids.includes(this.getValue())) {
+                                    callback({
+                                        "status": false,
+                                        "message": "ID already exists!"
+                                    })
+                                } else {
+                                    callback({
+                                        "status": true
+                                    })
+                                }
+                            }
+                        },
+                        "description": {
+                            "id": "description",
+                            "type": "textarea",
+                            "rows": 10,
+                        },
+                        "in-dimension": {
+                            "type": "select",
+                            "id": "in-dimension"
+                        },
+                        "expected-type": {
+                            "type": "select",
+                            "id": "expected-type",
+                            "helper": "Refer https://www.w3.org/TR/xmlschema-2/ for data type descriptions"
+                        }
+                        // "in-category": {
+                        //     "type": "select",
+                        //     "id": "in-category"
+                        // }
+                    },
+                    "form": {
+                        "buttons": {
+                            "add-metric": {
+                                "label": "Add Metric",
+
+                                "click": function () {
+                                    if (this.isFormValid()) {
+                                        let insertQuery = [
+                                            'PREFIX dqv: <http://www.w3.org/ns/dqv#>',
+                                            'PREFIX dct: <http://purl.org/dc/terms/>',
+                                            'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>',
+                                            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+                                            'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>',
+                                            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+                                            'PREFIX gkq: <https://geokur-dmp.geo.tu-dresden.de/pages/quality-elements#>',
+                                            "INSERT DATA {",
+                                            "<" + $("#uri").val() + "> a dqv:Metric;",
+                                            " skos:prefLabel \"" + $("#label").val() + "\";",
+                                            " skos:definition \"" + $("#description").val() + "\";",
+                                            " dqv:inDimension <" + $("#in-dimension").val() + ">;",
+                                            " dqv:expectedDataType <" + $("#expected-type").val() + ">;",
+                                            "}"
+                                        ]
+                                        insertQuery = insertQuery.join(" ");
+                                        alert(insertQuery)
+                                    }
+                                    else {
+                                        alert("Form contains invalid entries!")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "postRender": function (control) {
+                    // getNodes("dqv:Category").then(categories => {
+                    //     control.childrenByPropertyId["in-category"].schema.enum = categories.ids;
+                    //     control.childrenByPropertyId["in-category"].options.optionLabels = categories.labels;
+                    //     control.childrenByPropertyId["in-category"].refresh();
+                    // });
+                    getNodes("dqv:Dimension").then(dimensions => {
+                        control.childrenByPropertyId["in-dimension"].schema.enum = dimensions.ids;
+                        control.childrenByPropertyId["in-dimension"].options.optionLabels = dimensions.labels;
+                        control.childrenByPropertyId["in-dimension"].refresh();
+                    });
+                    control.childrenByPropertyId["expected-type"].schema.enum = [
+                        "https://www.w3.org/TR/xmlschema-2/#string",
+                        "https://www.w3.org/TR/xmlschema-2/#integer",
+                        "https://www.w3.org/TR/xmlschema-2/#decimal",
+                        "https://www.w3.org/TR/xmlschema-2/#boolean",
+                        "https://www.w3.org/TR/xmlschema-2/#time",
+                        "https://www.w3.org/TR/xmlschema-2/#date",
+                        "https://www.w3.org/TR/xmlschema-2/#duration",
+                        "https://www.w3.org/TR/xmlschema-2/#float",
+                        "https://www.w3.org/TR/xmlschema-2/#double"
+
+                    ];
+                    control.childrenByPropertyId["expected-type"].options.optionLabels = [
+                        "String",
+                        "Integer",
+                        "Decimal",
+                        "Boolean",
+                        "Time",
+                        "Date",
+                        "Duration",
+                        "Float",
+                        "Double"
+                    ];
+                    control.childrenByPropertyId["expected-type"].refresh();
+
+                    control.childrenByPropertyId["id"].on("change", function () {
+                        control.childrenByPropertyId["uri"].setValue("https://geokur-dmp.geo.tu-dresden.de/quality-register#" + this.getValue().replaceAll(" ", "").replaceAll("_", ""));
+                        control.refreshValidationState(true)
+                    });
+                }
+            });
+        });
+    </script>
+</body>
