@@ -89,10 +89,10 @@
 
     function buildMetaIntro(id, label, description) {
         const meta_intro_div = document.createElement('div');
-        meta_intro_div.setAttribute('id', id);
+        meta_intro_div.setAttribute('id', id.split('#').slice(-1));
         const title = document.createElement('h3');
         const title_content = document.createElement('a');
-        title_content.setAttribute('href', id);
+        title_content.setAttribute('href', '#' + id.split('#').slice(-1));
         title_content.textContent = label;
         title.appendChild(title_content);
         meta_intro_div.appendChild(title);
