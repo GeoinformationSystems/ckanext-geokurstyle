@@ -1,34 +1,45 @@
 {% ckan_extends %}
 
-{% block package_resources %}	
-	{% set dataset_type = c.pkg_dict.type %}
-	{% if dataset_type == 'dataset' %}
-	<button class="btn btn-primary" id="provenance-btn" value="{{pkg_dict.get('id')}}"" onclick="getProvenance()">Dataset
-		Provenance</button>
-	<button class="btn btn-default" id="json-btn" value="{{pkg_dict.get('id')}}"" onclick="getDsAsJson()">Dataset as JSON</button>
-	<script>
-		function getProvenance() {
-			let location = "https://geokur-dmp2.geo.tu-dresden.de/provViewer/?endpoint=https://geokur-dmp2.geo.tu-dresden.de/fuseki/ckan_mirror&dataset=https://geokur-dmp.geo.tu-dresden.de/dataset/" + document.getElementById("provenance-btn").value;
-			window.open(location);
-		};
-		function getDsAsJson() {
-			let location = "/api/action/package_show?id=" + document.getElementById("json-btn").value;
-			window.open(location);
-		};
-	</script>
-		
-	{% endif %}
-	{{ super() }}
+{% block package_resources %}
+{% set dataset_type = c.pkg_dict.type %}
+{% if dataset_type == 'dataset' %}
+<button class="btn btn-primary" id="provenance-btn" value="{{pkg_dict.get('id')}}"" onclick=" getProvenance()">Dataset
+	Provenance</button>
+
+
+<script>
+	function getProvenance() {
+		const location = "https://geokur-dmp2.geo.tu-dresden.de/provViewer/?endpoint=https://geokur-dmp2.geo.tu-dresden.de/fuseki/ckan_mirror&dataset=https://geokur-dmp.geo.tu-dresden.de/dataset/" + document.getElementById("provenance-btn").value;
+		window.open(location);
+	};
+</script>
+{% endif %}
+<button class="btn btn-default" id="json-btn" value="{{pkg_dict.get('name')}}"" onclick=" getDsAsJson()">Metadata as
+	JSON</button>
+<button class="btn btn-default" id="ttl-btn" value="{{pkg_dict.get('name')}}"" onclick=" getDsAsTtl()">Metadata as
+	RDF-Turtle</button>
+<script>
+	function getDsAsJson() {
+		const location = "/api/action/package_show?id=" + document.getElementById("json-btn").value;
+		window.open(location);
+	};
+	function getDsAsTtl() {
+		const location = "/dataset/" + document.getElementById("ttl-btn").value + ".ttl";
+		window.open(location);
+	}
+</script>
+
+
+
+
+{{ super() }}
 {% endblock %}
 
 
 {% block primary_content_inner %}
-	{{ super() }}
-	{% set dataset_extent = c.pkg_dict.spatial %}
-	{% if dataset_extent %}
-	{% snippet "spatial/snippets/dataset_map.html", extent=dataset_extent %}
-	{% endif %}
+{{ super() }}
+{% set dataset_extent = c.pkg_dict.spatial %}
+{% if dataset_extent %}
+{% snippet "spatial/snippets/dataset_map.html", extent=dataset_extent %}
+{% endif %}
 {% endblock %}
-
-
-
