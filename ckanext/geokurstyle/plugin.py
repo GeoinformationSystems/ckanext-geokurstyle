@@ -46,9 +46,9 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
         map.connect('add_metric', '/add-metric',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
                     action='add_metric')
-        # map.connect('edit_process', '/edit-process',
-        #             controller='ckanext.geokurstyle.controller:GeokurstyleController',
-        #             action='edit_process')
+        map.connect('legal_notice', '/legal-notice',
+                    controller='ckanext.geokurstyle.controller:GeokurstyleController',
+                    action='legal_notice')
         map.connect('quality_register', '/quality-register',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
                     action='quality_register')
