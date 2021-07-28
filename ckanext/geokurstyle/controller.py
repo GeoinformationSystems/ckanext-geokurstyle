@@ -12,4 +12,3 @@ class GeokurstyleController(base.BaseController):
         return base.render('geokurstyle/quality_register.html')
     def legal_notice(self):
         return base.render('geokurstyle/legal_notice.html')
-
