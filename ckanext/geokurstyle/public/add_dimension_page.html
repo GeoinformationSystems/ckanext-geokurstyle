@@ -74,7 +74,7 @@
         </div>
     </div>
 
-    <div id="metric-input-form"></div>
+    <div id="dimension-input-form"></div>
     <script>
 
         // make modal for the query
@@ -138,14 +138,14 @@
             return nodes;
         }
 
-        // get existing metrics for validation of id
-        getNodes("dqv:Metric").then(metrics => {
-            $("#metric-input-form").alpaca({
+        // get existing dimensions for validation of id
+        getNodes("dqv:Dimension").then(dimensions => {
+            $("#dimension-input-form").alpaca({
                 "data": {
                     "uri": "https://geokur-dmp.geo.tu-dresden.de/quality-register#"
                 },
                 "schema": {
-                    "title": "Add new quality metric to quality store",
+                    "title": "Add new quality dimension to quality store",
                     "type": "object",
                     "properties": {
                         "label": {
@@ -168,13 +168,8 @@
                             "title": "Description",
                             "required": true
                         },
-                        "in-dimension": {
-                            "title": "In Dimension",
-                            "enum": [],
-                            "required": true
-                        },
-                        "expected-type": {
-                            "title": "Expected Data Type",
+                        "in-category": {
+                            "title": "In Category",
                             "enum": [],
                             "required": true
                         }
@@ -204,7 +199,7 @@
                             "id": "uri",
                             "disabled": true,
                             "validator": function (callback) {
-                                if (metrics.ids.includes(this.getValue())) {
+                                if (dimensions.ids.includes(this.getValue())) {
                                     callback({
                                         "status": false,
                                         "message": "ID already exists!"
@@ -221,20 +216,15 @@
                             "type": "textarea",
                             "rows": 10,
                         },
-                        "in-dimension": {
+                        "in-category": {
                             "type": "select",
-                            "id": "in-dimension"
-                        },
-                        "expected-type": {
-                            "type": "select",
-                            "id": "expected-type",
-                            "helper": "Refer https://www.w3.org/TR/xmlschema-2/ for data type descriptions"
+                            "id": "in-category"
                         }
                     },
                     "form": {
                         "buttons": {
-                            "add-metric": {
-                                "label": "Add Metric",
+                            "add-category": {
+                                "label": "Add Dimension",
                                 "click": function () {
                                     if (this.isFormValid()) {
                                         let insertQuery = [
@@ -242,11 +232,10 @@
                                             'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>\n',
                                             '\n',
                                             "INSERT DATA {\n",
-                                            "  <" + $("#uri").val() + "> a dqv:Metric;\n",
+                                            "  <" + $("#uri").val() + "> a dqv:Dimension;\n",
                                             "    skos:prefLabel \"" + $("#label").val() + "\";\n",
                                             "    skos:definition \"" + $("#description").val() + "\";\n",
-                                            "    dqv:inDimension <" + $("#in-dimension").val() + ">;\n",
-                                            "    dqv:expectedDataType <" + $("#expected-type").val() + ">;\n",
+                                            "    dqv:inCategory <" + $("#in-category").val() + ">;\n",
                                             "}"
                                         ]
                                         insertQuery = insertQuery.join("");
@@ -275,36 +264,11 @@
                     }
                 },
                 "postRender": function (control) {
-                    getNodes("dqv:Dimension").then(dimensions => {
-                        control.childrenByPropertyId["in-dimension"].schema.enum = dimensions.ids;
-                        control.childrenByPropertyId["in-dimension"].options.optionLabels = dimensions.labels;
-                        control.childrenByPropertyId["in-dimension"].refresh();
+                    getNodes("dqv:Category").then(categories => {
+                        control.childrenByPropertyId["in-category"].schema.enum = categories.ids;
+                        control.childrenByPropertyId["in-category"].options.optionLabels = categories.labels;
+                        control.childrenByPropertyId["in-category"].refresh();
                     });
-                    control.childrenByPropertyId["expected-type"].schema.enum = [
-                        "https://www.w3.org/TR/xmlschema-2/#string",
-                        "https://www.w3.org/TR/xmlschema-2/#integer",
-                        "https://www.w3.org/TR/xmlschema-2/#decimal",
-                        "https://www.w3.org/TR/xmlschema-2/#boolean",
-                        "https://www.w3.org/TR/xmlschema-2/#time",
-                        "https://www.w3.org/TR/xmlschema-2/#date",
-                        "https://www.w3.org/TR/xmlschema-2/#duration",
-                        "https://www.w3.org/TR/xmlschema-2/#float",
-                        "https://www.w3.org/TR/xmlschema-2/#double"
-
-                    ];
-                    control.childrenByPropertyId["expected-type"].options.optionLabels = [
-                        "String",
-                        "Integer",
-                        "Decimal",
-                        "Boolean",
-                        "Time",
-                        "Date",
-                        "Duration",
-                        "Float",
-                        "Double"
-                    ];
-                    control.childrenByPropertyId["expected-type"].refresh();
-
                     control.childrenByPropertyId["id"].on("change", function () {
                         control.childrenByPropertyId["uri"].setValue("https://geokur-dmp.geo.tu-dresden.de/quality-register#" + this.getValue().replaceAll(" ", "").replaceAll("_", ""));
                         control.refreshValidationState(true)

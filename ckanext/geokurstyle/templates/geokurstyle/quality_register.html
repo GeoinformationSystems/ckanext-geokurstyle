@@ -12,20 +12,23 @@
     <p>
         This page displays all available data quality metrics, dimensions and categories. Each metric is defined in a
         certain dimension and each dimension is defined in a certain category. New
-        metrics can be proposed to the curator by using
-        the add metric button.
+        metrics, dimensions and vategories can be proposed to the curator by using
+        the according button.
     </p>
     <!-- check if the current user is in a group, where they are allowed to create datasets. If so, the button for addign a process is shown.
     This is only useful if users that are not member of a group are not permitted to create datasets.
     (ckan.ini: ckan.auth.create_unowned_dataset = False) -->
     {% if h.organizations_available(permission='create_dataset') %}
-    <div class='page_primary_action' style='margin-bottom: 50px;'>
-        <a class='btn btn-primary' id='add_button' style='float: right;' href='/add-metric'><i
-                class='fa fa-plus-square'></i> Add
-            Metric</a>
-    </div>
+    <a class='btn btn-primary' id='add_category_button' style='float: right;' href='/add-category'><i
+            class='fa fa-plus-square'></i> Add Category</a>
+    <a class='btn btn-primary' id='add_dimension_button' style='float: right; margin-right: 1em;'
+        href='/add-dimension'><i class='fa fa-plus-square'></i> Add Dimension</a>
+    <a class='btn btn-primary' id='add_metric_button' style='float: right; margin-right: 1em;' href='/add-metric'><i
+            class='fa fa-plus-square'></i> Add Metric</a>
     {% endif %}
-    <div id='quality-descriptions' class=container style='margin-bottom: 150px;'>
+    <br />
+    <br />
+    <div id='quality-descriptions' style='margin-bottom: 150px;'>
     </div>
 </div>
 <script>
