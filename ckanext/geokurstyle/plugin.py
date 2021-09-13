@@ -1,33 +1,16 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 
+import ckan.lib.helpers as helpers
 
 class GeokurstylePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
     plugins.implements(plugins.IDatasetForm)
-    plugins.implements(plugins.IValidators)
-    plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IRoutes)
+    plugins.implements(plugins.IPackageController, inherit=True)
+
 
     # IConfigurer
-
-    def get_validators(self):
-        return {
-        }
-
-    def get_helpers(self):
-        return {
-        }
-
-    def is_fallback(self):
-        # Return True to register this plugin as the default handler for
-        # package types not handled by any other IDatasetForm plugin.
-        return True
-
-    def package_types(self):
-        # This plugin doesn't handle any special package types, it just
-        # registers itself as the default (above).
-        return []
 
     def update_config(self, config):
         # Add this plugin's templates dir to CKAN's extra_template_paths, so
@@ -38,8 +21,24 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
         toolkit.add_resource('public', 'ckanext-geokurstyle')
 
 
-    def before_map(self, map):
+    # IDatasetForm
 
+    def is_fallback(self):
+        # Return True to register this plugin as the default handler for
+        # package types not handled by any other IDatasetForm plugin.
+        return True
+        
+    def package_types(self):
+        # This plugin doesn't handle any special package types, it just
+        # registers itself as the default (above).
+        return []
+
+    
+    # IRoutes
+
+    def before_map(self, map):
+        # Plugin into the setup of the routes map creation.
+        # Called before the routes map is generated.
         return map
 
     def after_map(self, map):
@@ -59,3 +58,11 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
                     action='quality_register')
         return map
+
+
+    # IPackageController
+
+    def after_show(self, context, pkg_dict):
+        # Add fully qualified uri to package_show
+        pkg_dict[u'uri'] = helpers.url_for('dataset.read', id=pkg_dict[u'id'], qualified=True)
+        return pkg_dict
