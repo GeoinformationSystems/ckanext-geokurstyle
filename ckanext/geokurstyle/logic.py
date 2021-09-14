@@ -56,19 +56,19 @@ def read_rdf(context, data_dict):
     try:
         toolkit.check_access('package_create', context, data_dict)
     except:
-        return 'not_authorized'
+        return {'error': True, 'msg': 'not_authorized', 'trace': None}
 
     parser = RDFParser()
     try:
         parser.parse(data_dict['rdf'], _format = 'ttl')
-    except:
-        return 'malformed'
+    except Exception as e:
+        return {'error': True, 'msg': 'malformed',  'trace': str(e)}
 
     
     for package in parser.datasets():
         # return package
         package['owner_org'] = data_dict['org']
         toolkit.get_action('package_create')(context, package)
-        return(package['name'])
+        return ({'error': False, 'msg': package['name'], 'trace': None})
 
     

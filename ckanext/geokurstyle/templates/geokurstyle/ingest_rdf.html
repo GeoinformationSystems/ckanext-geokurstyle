@@ -26,6 +26,7 @@
 <br>
 <button class="btn btn-primary" id="ingest-btn">Create Metadataset</button>
 <p id='response' class='error-msg'></p>
+<p id='trace'></p>
 
 <script>
     async function postData(url = '', data = {}) {
@@ -49,13 +50,17 @@
         data = { 'rdf': document.getElementById('textarea').value, 'org': $("input[type='radio'][name='group']:checked").val() };
         postData('/api/action/read_rdf', data)
             .then(data => {
-                console.log(data)
                 if (data['success']) {
-                    if (data['result'] == 'not_authorized') {
-                        document.getElementById('response').innerHTML = 'Not authorized. Please log in or register an account.';
-                    }
-                    else if (data['result'] == 'malformed') {
-                        document.getElementById('response').innerHTML = 'Malformed RDF, did you use RDF-Turtle?';
+                    const result = data['result'];
+                    if (result['error']) {
+                        if (result['msg'] == 'malformed') {
+                            document.getElementById('response').innerHTML = 'Malformed RDF, did you use RDF-Turtle?';
+                            document.getElementById('trace').innerHTML = result['trace'];
+                        }
+                        if (result['msg'] == 'not_authorized') {
+                            document.getElementById('response').innerHTML = 'Not authorized. Please log in or register an account.';
+                            document.getElementById('trace').innerHTML = result['trace'];
+                        }
                     }
                     else {
                         const location = '/dataset/edit/' + data['result'];
@@ -67,9 +72,11 @@
                     const error = data['error']['name'];
                     if (error == 'That URL is already in use.') {
                         document.getElementById('response').innerHTML = 'A metadataset with this URL is already in use!';
+                        document.getElementById('trace').innerHTML = null;
                     }
                     else {
-                        document.getElementById('response').innerHTML = error;
+                        document.getElementById('response').innerHTML = 'An unknown error occured!'
+                        document.getElementById('trace').innerHTML = error;
                     }
                 }
             });
