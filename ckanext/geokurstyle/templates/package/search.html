@@ -1,5 +1,29 @@
 {% ckan_extends %}
 
+{% block page_primary_action %}
+
+{{ super() }}
+
+<!-- <form method="post" action="{{ action }}" class="datapusher-form"> -->
+
+<button class="btn btn-primary" id=parse_rdf onclick="post()">
+    <i class="fa fa-cloud-upload"></i> {{ _('Ingest RDF') }}
+</button>
+<script>
+    function post() {
+    }
+
+
+
+    // function parseRDF() {
+    //     const rdf = document.getElementById('in-rdf').value
+    //     const location = "/ingest-rdf?rdf=" + rdf;
+    //     window.open(location);
+    // };
+</script>
+<!-- </form> -->
+{% endblock %}
+
 {% block secondary_content %}
 
 {% snippet "spatial/snippets/spatial_query.html" %}

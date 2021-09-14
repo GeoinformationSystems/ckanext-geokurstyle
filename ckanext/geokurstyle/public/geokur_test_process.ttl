@@ -1,0 +1,83 @@
+@prefix adms: <http://www.w3.org/ns/adms#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix dqv: <http://www.w3.org/ns/dqv#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix geodcat: <http://data.europa.eu/930/> .
+@prefix geokurdcat: <https://geokur-dmp.geo.tu-dresden.de/geokurdcat#> .
+@prefix gkq: <https://geokur-dmp.geo.tu-dresden.de/quality-register#> .
+@prefix gqc: <https://geokur-dmp.geo.tu-dresden.de/category-register#> .
+@prefix gsp: <http://www.opengis.net/ont/geosparql#> .
+@prefix locn: <http://www.w3.org/ns/locn#> .
+@prefix oa: <https://www.w3.org/TR/annotation-vocab#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sdmx: <http://purl.org/linked-data/sdmx/2009/attribute#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix spdx: <http://spdx.org/rdf/terms#> .
+@prefix time: <http://www.w3.org/2006/time> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/b0e5c26c-7762-4f99-8234-b793ce13d19c> a prov:Entity ;
+    prov:wasDerivedFrom <https://geokur-dmp.geo.tu-dresden.de/dataset/02bc58a9-bd4f-4ba0-8988-9c6fff2eb4cc>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/1e735936-7e10-4104-b8d9-d417f138905c>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/300ee826-06d1-4a15-be8a-6816604c1205>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/4dced872-67ed-4de0-8533-75721351d4f3>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/7863fbd0-e437-4fb8-a447-7deafc11e4a4>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/81c1734e-d2a7-4f0e-8891-260a050a4bfc>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/b26e2740-cf30-4caa-8fbe-e0d09346bf79>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/db83bb8f-18d4-4a74-b49e-5454b59579c6>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/e5710207-2b1f-40c9-b69e-9aa09d332a5d> ;
+    prov:wasGeneratedBy <https://geokur-dmp.geo.tu-dresden.de/dataset/d63e664b-d546-43e6-b657-0cd9b556f0eb> .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/d63e664b-d546-43e6-b657-0cd9b556f0eb> a dcat:Dataset,
+        prov:Activity,
+        geokurdcat:Process ;
+    dct:description "The SPAM model process that produces global gridded maps of agricultural production at a 5 arcmin spatial resolution." ;
+    dct:identifier "d63e664b-d546-43e6-b657-0cd9b556f0eb" ;
+    dct:issued "2021-08-09T11:41:05.370557"^^xsd:dateTime ;
+    dct:modified "2021-09-03T08:51:44.657470"^^xsd:dateTime ;
+    dct:title "MapSPAM Model Process" ;
+    prov:used <https://geokur-dmp.geo.tu-dresden.de/dataset/02bc58a9-bd4f-4ba0-8988-9c6fff2eb4cc>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/1e735936-7e10-4104-b8d9-d417f138905c>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/300ee826-06d1-4a15-be8a-6816604c1205>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/4dced872-67ed-4de0-8533-75721351d4f3>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/7863fbd0-e437-4fb8-a447-7deafc11e4a4>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/81c1734e-d2a7-4f0e-8891-260a050a4bfc>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/b26e2740-cf30-4caa-8fbe-e0d09346bf79>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/db83bb8f-18d4-4a74-b49e-5454b59579c6>,
+        <https://geokur-dmp.geo.tu-dresden.de/dataset/e5710207-2b1f-40c9-b69e-9aa09d332a5d> ;
+    foaf:page <https://www.mapspam.info/methodology/> ;
+    geokurdcat:hasGeospatialCategory <geokur:Geometric>,
+        <geokur:Module>,
+        <geokur:Neighborhood>,
+        <geokur:Network>,
+        <geokur:Overlay>,
+        <geokur:Reclassification>,
+        <geokur:Selection>,
+        <geokur:Statistics>,
+        <geokur:Transformation>,
+        <geokur:Visualization> .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/02bc58a9-bd4f-4ba0-8988-9c6fff2eb4cc> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/1e735936-7e10-4104-b8d9-d417f138905c> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/300ee826-06d1-4a15-be8a-6816604c1205> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/4dced872-67ed-4de0-8533-75721351d4f3> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/7863fbd0-e437-4fb8-a447-7deafc11e4a4> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/81c1734e-d2a7-4f0e-8891-260a050a4bfc> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/b26e2740-cf30-4caa-8fbe-e0d09346bf79> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/db83bb8f-18d4-4a74-b49e-5454b59579c6> a prov:Entity .
+
+<https://geokur-dmp.geo.tu-dresden.de/dataset/e5710207-2b1f-40c9-b69e-9aa09d332a5d> a prov:Entity .

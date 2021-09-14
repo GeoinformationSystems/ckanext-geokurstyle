@@ -1,6 +1,9 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+from ckantoolkit import config
 
+# from ckanext.geokurstyle.logic import (read_rdf_auth, read_rdf)
+from ckanext.geokurstyle.logic import read_rdf
 
 class GeokurstylePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
@@ -8,14 +11,32 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IValidators)
     plugins.implements(plugins.ITemplateHelpers)
     plugins.implements(plugins.IRoutes)
+    # plugins.implements(plugins.IAuthFunctions)
+    plugins.implements(plugins.IActions)
 
-    # IConfigurer
 
-    def get_validators(self):
+    # REGISTER THE PLUGINS ACTIONS
+    def get_actions(self):
         return {
+            'read_rdf': read_rdf
         }
 
+    # REGISTER TEH PLUGINS HELPER TEMPLATE HELPER FUNCTIONS
     def get_helpers(self):
+        return {
+            # don't register any helper
+            # 'geokurstyle_read_rdf': read_rdf
+        }
+
+    # REGISTER THE PLUGINS AUTH FUNCTIONS
+    # dont need our own auth functions, just check if user can create packages
+    # def get_auth_functions(self):
+    #     return {
+    #         'read_rdf': read_rdf_auth
+    #     }
+
+
+    def get_validators(self):
         return {
         }
 
@@ -38,11 +59,13 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
         toolkit.add_resource('public', 'ckanext-geokurstyle')
 
 
-    def before_map(self, map):
-
+    def before_map(self, map):      
         return map
 
     def after_map(self, map):
+        map.connect('ingest rdf', '/ingest-rdf',
+                    controller='ckanext.geokurstyle.controller:GeokurstyleController',
+                    action='ingest_rdf')
         map.connect('add_metric', '/add-metric',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
                     action='add_metric')
