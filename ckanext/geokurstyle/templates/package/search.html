@@ -1,26 +1,20 @@
 {% ckan_extends %}
 
 {% block page_primary_action %}
+<button class="btn btn-primary" style="float: right;" onclick="open_ingest_page()">
+    <i class="fa fa-arrow-down"></i> {{ _('Ingest RDF') }}
+</button>
+<script>
+    function open_ingest_page() {
+        // open in this tab
+        window.open('/ingest-rdf', '_self')
+    }
+</script>
 
 {{ super() }}
 
-<!-- <form method="post" action="{{ action }}" class="datapusher-form"> -->
-
-<button class="btn btn-primary" id=parse_rdf onclick="post()">
-    <i class="fa fa-cloud-upload"></i> {{ _('Ingest RDF') }}
-</button>
-<script>
-    function post() {
-    }
 
 
-
-    // function parseRDF() {
-    //     const rdf = document.getElementById('in-rdf').value
-    //     const location = "/ingest-rdf?rdf=" + rdf;
-    //     window.open(location);
-    // };
-</script>
 <!-- </form> -->
 {% endblock %}
 

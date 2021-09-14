@@ -56,13 +56,13 @@ def read_rdf(context, data_dict):
     try:
         toolkit.check_access('package_create', context, data_dict)
     except:
-        return 'Not authorized. Please log in or register an account.'
+        return 'not_authorized'
 
     parser = RDFParser()
     try:
         parser.parse(data_dict['rdf'], _format = 'ttl')
     except:
-        return 'Malformed RDF, did you use RDF-Turtle?'
+        return 'malformed'
 
     
     for package in parser.datasets():

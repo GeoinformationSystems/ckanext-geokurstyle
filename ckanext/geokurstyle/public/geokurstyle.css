@@ -1,3 +1,35 @@
+.error-msg{
+  color: #ff664a;
+  font-size: large;
+  margin: 5px
+}
+
+.toggle-buttons input[type="radio"] {
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.toggle-buttons label {
+  border: 1px solid rgb(124, 124, 124);
+  padding: 0.5em;
+}
+
+.toggle-buttons input:checked+label {
+  background: #00c45262;
+  color: #000000;
+  box-shadow: none;
+}
+
+input:hover+label,
+input:focus+label {
+  background: #e0e0e0;
+}
+
 .btn {
   border-radius: 0 0 0 0;
 }
