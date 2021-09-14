@@ -14,7 +14,7 @@
         {% else %}
         <input type="radio" id="{{group['id']}}" name="group" value="{{group['id']}}">
         {% endif %}
-        <label for="{{group['id']}}">{{group['title']}}</label>
+        <label class="toggle-labels" for="{{group['id']}}">{{group['title']}}</label>
         {% endfor %}
     </div>
 </form>
