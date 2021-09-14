@@ -70,24 +70,31 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
         return map
 
     def after_map(self, map):
+
         map.connect('ingest rdf', '/ingest-rdf',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='ingest_rdf')
+                    action='render_ingest_rdf')
+
         map.connect('add_metric', '/add-metric',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='add_metric')
+                    action='render_add_metric')
+
         map.connect('add_dimension', '/add-dimension',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='add_dimension')
+                    action='render_add_dimension')
+
         map.connect('add_category', '/add-category',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='add_category')        
+                    action='render_add_category')
+
         map.connect('legal_notice', '/legal-notice',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='legal_notice')
+                    action='render_legal_notice')
+
         map.connect('quality_register', '/quality-register',
                     controller='ckanext.geokurstyle.controller:GeokurstyleController',
-                    action='quality_register')
+                    action='render_quality_register')
+        
         return map
 
 
