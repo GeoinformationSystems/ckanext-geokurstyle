@@ -1,9 +1,11 @@
 {% ckan_extends %}
 
 {% block page_primary_action %}
+{% if h.check_access('package_create') %}
 <button class="btn btn-primary" style="float: right;" onclick="open_ingest_page()">
     <i class="fa fa-arrow-down"></i> {{ _('Ingest RDF') }}
 </button>
+{%endif%}
 <script>
     function open_ingest_page() {
         // open in this tab
