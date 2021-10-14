@@ -1,3 +1,15 @@
+.quality-element.metric a{
+    color: #30b97b;
+}
+
+.quality-element.dimension a{
+  color: rgb(240, 143, 105);
+}
+
+.quality-element.category a{  
+  color: rgb(96, 140, 223);
+}
+
 .error-msg{
   color: #ff664a;
   font-size: large;

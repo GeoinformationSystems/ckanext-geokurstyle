@@ -11,8 +11,9 @@
 
     <p>
         This page displays all available data quality metrics, dimensions and categories. Each metric is defined in a
-        certain dimension and each dimension is defined in a certain category. The contents of the quality register are
-        based on ISO19157:2013.
+        certain dimension and each dimension is defined in a certain category. The content of the quality register is
+        based on ISO19157:2013. Users can extend this register by proposing new metrics, dimensions or qualities
+        (Add buttons). Before proposing one of these, please carefully read through the existing items.
     </p>
     <!-- check if the current user is in a group, where they are allowed to create datasets. If so, the button for addign a process is shown.
     This is only useful if users that are not member of a group are not permitted to create datasets.
@@ -89,9 +90,10 @@
         return nodes;
     }
 
-    function buildMetaIntro(id, label, description) {
+    function buildMetaIntro(id, label, description, class_) {
         const meta_intro_div = document.createElement('div');
         meta_intro_div.setAttribute('id', id.split('#').slice(-1));
+        meta_intro_div.setAttribute('class', class_);
         const title = document.createElement('h3');
         const title_content = document.createElement('a');
         title_content.setAttribute('href', '#' + id.split('#').slice(-1));
@@ -166,7 +168,7 @@
             headline.textContent = 'Metrics';
             document.getElementById('quality-descriptions').appendChild(headline);
             for (let id of Object.keys(metrics)) {
-                const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description);
+                const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description, "quality-element metric");
                 const key_list = [
                     'id',
                     'datatype',
@@ -187,7 +189,7 @@
             headline.textContent = 'Dimensions';
             document.getElementById('quality-descriptions').appendChild(headline);
             for (let id of Object.keys(dimensions)) {
-                const dimension_div = buildMetaIntro(id, dimensions[id].label, dimensions[id].description);
+                const dimension_div = buildMetaIntro(id, dimensions[id].label, dimensions[id].description, "quality-element dimension");
                 const key_list = [
                     'id',
                     'category'
@@ -206,7 +208,7 @@
             headline.textContent = 'Categories';
             document.getElementById('quality-descriptions').appendChild(headline);
             for (let id of Object.keys(categories)) {
-                const category_div = buildMetaIntro(id, categories[id].label, categories[id].description);
+                const category_div = buildMetaIntro(id, categories[id].label, categories[id].description, "quality-element category");
                 const key_list = [
                     'id'
                 ];
