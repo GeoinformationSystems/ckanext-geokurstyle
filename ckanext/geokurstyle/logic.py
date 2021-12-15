@@ -1,7 +1,11 @@
 
+import ckan.plugins as plugins
 from ckan.plugins import toolkit
 from ckanext.dcat.processors import RDFParser
-
+import ckan.lib.helpers as h
+import ckan.lib.base as base
+import ckan.lib.plugins as lib_plugins
+from ckanext.scheming.plugins import SchemingDatasetsPlugin as scheming
 
 
 # @toolkit.auth_allow_anonymous_access
@@ -20,7 +24,7 @@ def read_rdf(context, data_dict):
 
     data_dict = {
         'rdf' : <geokurdcat-rdf-package-metadata>
-        'org' : <an register organisation of this CKAN instance where 
+        'org' : <an organisation of this CKAN instance where 
                 the user is allowed to create packages.>
     }
 
@@ -53,6 +57,12 @@ def read_rdf(context, data_dict):
         };
     </script>
     '''
+
+
+    
+
+
+
     try:
         toolkit.check_access('package_create', context, data_dict)
     except:
@@ -70,5 +80,23 @@ def read_rdf(context, data_dict):
         package['owner_org'] = data_dict['org']
         toolkit.get_action('package_create')(context, package)
         return ({'error': False, 'msg': package['name'], 'trace': None})
+
+    return {'error': True, 'msg': 'no_package_found',  'trace': None}
+    # for package in parser.datasets():
+    #     # return package (only first one)
+    #     package['owner_org'] = data_dict['org']
+    #     context['allow_state_change'] = True
+    #     package['state'] = 'draft'
+
+    #     toolkit.get_action('package_create')(context, package)
+    #     return ({'error': False, 'msg': package['name'], 'trace': None})
+    
+    # for package in parser.datasets():
+    #     # return package
+    #     package['owner_org'] = data_dict['org']
+    #     template = lookup_package_plugin('dataset').new_template()
+    #     pkg_dict = package
+    #     # url = base.render(template)
+    #     return ({'error': False, 'msg': template, 'trace': None})
 
     

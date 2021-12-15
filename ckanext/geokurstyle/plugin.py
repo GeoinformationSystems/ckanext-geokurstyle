@@ -8,7 +8,9 @@ import ckan.lib.helpers as helpers
 
 class GeokurstylePlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
-    plugins.implements(plugins.IDatasetForm)
+    # plugins.implements(plugins.IDatasetForm)
+    # plugins.implements(plugins.IDatasetForm, inherit=True)
+
     plugins.implements(plugins.IRoutes)
     # plugins.implements(plugins.IAuthFunctions)
     plugins.implements(plugins.IActions)
@@ -49,17 +51,17 @@ class GeokurstylePlugin(plugins.SingletonPlugin):
         toolkit.add_resource('public', 'ckanext-geokurstyle')
 
 
-    # IDatasetForm
+    # # IDatasetForm
 
-    def is_fallback(self):
-        # Return True to register this plugin as the default handler for
-        # package types not handled by any other IDatasetForm plugin.
-        return True
+    # def is_fallback(self):
+    #     # Return True to register this plugin as the default handler for
+    #     # package types not handled by any other IDatasetForm plugin.
+    #     return True
         
-    def package_types(self):
-        # This plugin doesn't handle any special package types, it just
-        # registers itself as the default (above).
-        return []
+    # def package_types(self):
+    #     # This plugin doesn't handle any special package types, it just
+    #     # registers itself as the default (above).
+    #     return list(SchemingDatasetsPlugin._schemas)
 
     
     # IRoutes

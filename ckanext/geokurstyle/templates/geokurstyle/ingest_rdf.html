@@ -1,6 +1,15 @@
 {% extends 'page.html' %}
 
+{% block head_extras %}
 
+<link rel="stylesheet" href="{% url_for_static 'js/codemirror/base.css' %}">
+<!-- Code Mirror CSS/JS -->
+<link rel="stylesheet" href="{% url_for_static 'js/codemirror/lib/codemirror.css' %}">
+<script src="{% url_for_static 'js/codemirror/lib/codemirror.js' %}"></script>
+<script src="{% url_for_static 'js/codemirror/lib/mode.sparql.js' %}"></script>
+<link rel="stylesheet" href="{% url_for_static 'js/codemirror/themes/default.css' %}">
+
+{% endblock %}
 
 
 {% block primary %}
@@ -20,13 +29,76 @@
 </form>
 
 
-<textarea id="textarea" rows="20" cols="100">
-    Paste your metadata here (RDF-Turtle).
+<textarea id="ttl_code" name="ttl_code" resize="both">
+    # Paste your metadata here (RDF-Turtle).
+    # Example | Ingest a metadataset that only fulfills the minimun requirements:
+    #
+    # @prefix adms: <http://www.w3.org/ns/adms#> .
+    # @prefix dcat: <http://www.w3.org/ns/dcat#> .
+    # @prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+    # @prefix geokurdcat: <https://geokur-dmp.geo.tu-dresden.de/geokurdcat#> .
+
+    # [] a dcat:Dataset,
+    #       geokurdcat:Dataset ;
+    #   adms:identifier "an-id-only-containing-small-letters-and-minus" ;
+    #   dcat:contactPoint [ vcard:fn "Contact Person or Organisation" ] . 
 </textarea>
 <br>
 <button class="btn btn-primary" id="ingest-btn">Create Metadataset</button>
 <p id='response' class='error-msg'></p>
 <p id='trace'></p>
+
+<br><br>
+<p><small> Created using the <a href="https://codemirror.net/">CodeMirror</a> library and soruce code from the <a
+            href="https://github.com/georgepm/ckanext-sparql">CKAN Sparql Interface Extension</a>. </small></p>
+<br><br>
+
+
+
+<script>
+    // this script block is mostly taken from:
+    // https://github.com/georgepm/ckanext-sparql/blob/master/ckanext/sparql/public/ckanext/sparql/public_sparql/base.js
+
+    // The CodeMirror stuff 
+    var editor = CodeMirror.fromTextArea(document.getElementById("ttl_code"), {
+        mode: "application/x-sparql-query",
+        lineNumbers: true,
+        onCursorActivity: function () {
+            editor.setLineClass(hlLine, null);
+            hlLine = editor.setLineClass(editor.getCursor().line, "activeline");
+        }
+    });
+
+    var hlLine = editor.setLineClass(0, "activeline");
+
+    var prefixes = "PREFIX void: <http://rdfs.org/ns/void#> PREFIX geo: <http://www.w3.org/2003/01/geo/wgs84_pos#> PREFIX foaf: <http://xmlns.com/foaf/0.1/> PREFIX vann: <http://purl.org/vocab/vann/> PREFIX teach: <http://linkedscience.org/teach/ns#> PREFIX dcterms: <http://purl.org/dc/terms/> PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> PREFIX dcat: <http://www.w3.org/ns/dcat#> PREFIX crsw: <http://courseware.rkbexplorer.com/ontologies/courseware#> PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> PREFIX owl: <http://www.w3.org/2002/07/owl#> PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> PREFIX aiiso: <http://purl.org/vocab/aiiso/schema#> PREFIX univcat: <http://data.upf.edu/upf/ontologies/universidadcatalana#> PREFIX skos: <http://www.w3.org/2004/02/skos/core#> PREFIX vivo: <http://vivoweb.org/ontology/core#> PREFIX sbench: <http://swat.cse.lehigh.edu/onto/univ-bench.owl#> PREFIX sdmx-attribute: <http://purl.org/linked-data/sdmx/2009/attribute#> PREFIX sdmx-concept: <http://purl.org/linked-data/sdmx/2009/concept#> PREFIX sdmx-code: <http://purl.org/linked-data/sdmx/2009/code#> PREFIX disco: <http://rdf-vocabulary.ddialliance.org/discovery#> PREFIX sdmx-dimension: <http://purl.org/linked-data/sdmx/2009/dimension#> PREFIX sdmx-measure: <http://purl.org/linked-data/sdmx/2009/measure#> PREFIX qb: <http://purl.org/linked-data/cube#> PREFIX sdmx: <http://purl.org/linked-data/sdmx#>"
+
+    function get_sparql_string() {
+        var sparql_string = editor.getValue();
+        var unicode_string = toUnicode(sparql_string);
+        //$('#test_sparql').text(unicode_string);
+        return unicode_string;
+    }
+    //Author: http://buildingonmud.blogspot.com.es/2009/06/convert-string-to-unicode-in-javascript.html
+    //Only for TextArea
+    function toUnicode(theString) {
+        var unicodeString = '';
+        var regex = new RegExp(/[^\w\s\n\t`~!@#$%^&*()_|+\-=?;:'",.<>\{\}\[\]\\\/]/g);
+        for (var j = 0; j < theString.length; j++) {
+            if (theString.charAt(j).match(regex)) {
+                var theUnicode = theString.charCodeAt(j).toString(16).toUpperCase();
+                while (theUnicode.length < 4) {
+                    theUnicode = '0' + theUnicode;
+                }
+                theUnicode = '\\u' + theUnicode;
+                unicodeString += theUnicode;
+            } else {
+                unicodeString += theString.charAt(j);
+            }
+        }
+        return unicodeString;
+    }
+</script>
 
 <script>
     async function postData(url = '', data = {}) {
@@ -47,7 +119,7 @@
         return response.json(); // parses JSON response into native JavaScript objects
     }
     document.getElementById('ingest-btn').onclick = function () {
-        data = { 'rdf': document.getElementById('textarea').value, 'org': $("input[type='radio'][name='group']:checked").val() };
+        data = { 'rdf': get_sparql_string(), 'org': $("input[type='radio'][name='group']:checked").val() };
         postData('/api/action/read_rdf', data)
             .then(data => {
                 if (data['success']) {
@@ -61,10 +133,15 @@
                             document.getElementById('response').innerHTML = 'Not authorized. Please log in or register an account.';
                             document.getElementById('trace').innerHTML = result['trace'];
                         }
+                        if (result['msg'] == 'no_package_found') {
+                            document.getElementById('response').innerHTML = 'No package found in submitted data.';
+                            document.getElementById('trace').innerHTML = result['trace'];
+                        }
                     }
                     else {
-                        const location = '/dataset/edit/' + data['result'];
+                        const location = '/dataset/' + data['result']['msg'];
                         window.open(location, '_self');
+                        // console.log(data['result']['msg'])
                     }
 
                 }
