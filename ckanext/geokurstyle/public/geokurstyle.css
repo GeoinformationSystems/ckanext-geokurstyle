@@ -26,7 +26,7 @@
 }
 
 #add_metric_button:active{
-  background-color: #25a76c;
+  background-color: rgb(76, 240, 166);
   box-shadow: inset 0px 0px 3px #777777;
 }
 

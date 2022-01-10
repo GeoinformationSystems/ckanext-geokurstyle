@@ -1,6 +1,20 @@
 {% extends 'page.html' %}
 
 
+{% block head_extras %}
+
+
+<script src="{% url_for_static 'js/dqv_viz/dagre.min.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/p5.min.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/Model.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/View.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/P5Node.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/P5ArrowConnector.js' %}"></script>
+
+<link rel="stylesheet" href="{% url_for_static 'js/dqv_viz/p5.css' %}">
+
+{% endblock %}
+
 {% block breadcrumb_content %}
 <li class='active'>{{ _('Quality Register') }}</li>
 {% endblock %}
@@ -15,6 +29,8 @@
         based on ISO19157:2013. Users can extend this register by proposing new metrics, dimensions or qualities
         (Add buttons). Before proposing one of these, please carefully read through the existing items.
     </p>
+
+    <br />
     <!-- check if the current user is in a group, where they are allowed to create datasets. If so, the button for addign a process is shown.
     This is only useful if users that are not member of a group are not permitted to create datasets.
     (ckan.ini: ckan.auth.create_unowned_dataset = False) -->
@@ -26,12 +42,152 @@
     <a class='btn btn-primary' id='add_metric_button' style='float: right; margin-right: 1em;' href='/add-metric'><i
             class='fa fa-plus-square'></i> Add Metric</a>
     {% endif %}
-    <br />
-    <br />
+    <br /><br /><br />
+
+    <p>
+        Below every description, an interactive visualization can be found. Controls are as follows:
+    <ul>
+        <li>Double left click on a node: Expand this node</li>
+        <li>Left click and hold a node: Drag this node</li>
+        <li>Strg plus left click on a node: Go to this nodes description in a new browser window</li>
+        <li>Right click on a node: Remove this node from the visualization (careful; removing the last node requires
+            reloading to bring it back)</li>
+    </ul>
+
+
+    </p>
+
     <div id='quality-descriptions' style='margin-bottom: 150px;'>
     </div>
 </div>
 <script>
+    function new_p5_sketch(sketch, div) {
+        const node_id = sketch._userNode
+
+        const PREFIXES = [
+            'PREFIX dqv: <http://www.w3.org/ns/dqv#>',
+            'PREFIX dct: <http://purl.org/dc/terms/>',
+            'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>',
+            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+            'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>',
+            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
+            'PREFIX gkq: <https://geokur-dmp.geo.tu-dresden.de/quality-register#>'
+        ];
+
+        const PREDICATES = [
+            'dqv:inDimension',
+            'dqv:inCategory'
+        ]
+
+
+        const width = document.getElementById('quality-descriptions').offsetWidth
+        let height = 450
+        const horizontal_margin = width / 5;
+        const vertical_margin = height / 5;
+        const radius = 20;
+        let strg_pressed = false;
+
+        const node_model = new Model(sketch);
+        const view = new View(node_model, width, height, horizontal_margin, vertical_margin, radius, sketch)
+
+
+        sketch.doubleClicked = function () {
+            for (let p5node of view.get_nodes()) {
+                let node_id = p5node.double_clicked();
+                if (node_id) {
+                    for (let predicate of PREDICATES) {
+                        node_model.expand_node(node_id, predicate).then(() => {
+                            // view.update_data(exclude_node_id = node_id);
+                            view.update_data();
+                        })
+                    }
+                }
+            }
+
+        }
+
+        sketch.keyPressed = function () {
+            // strg pressed
+            if (sketch.keyCode === 17) {
+                strg_pressed = true;
+            }
+        }
+        sketch.keyReleased = function () {
+            strg_pressed = false;
+        }
+
+
+        sketch.mousePressed = function () {
+            if (sketch.mouseButton === sketch.LEFT) {
+                for (let p5node of view.get_nodes()) {
+                    p5node.left_clicked();
+                }
+                if (strg_pressed) {
+                    strg_pressed = false;
+
+                    for (let p5node of view.get_nodes()) {
+                        p5node.strg_plus_left_clicked();
+                    }
+                }
+
+            }
+            if (sketch.mouseButton === sketch.RIGHT) {
+                for (let p5node of view.get_nodes()) {
+                    let node_id = p5node.right_clicked();
+                    if (node_id) {
+                        let edges = node_model.get_edges()
+                        // delete all nodes and edges
+                        for (let i = edges.length - 1; i >= 0; i--) {
+                            let edge = edges[i]
+                            if (
+                                (edge.from == node_id)
+                                ||
+                                (edge.to == node_id)
+                            ) {
+                                node_model.remove_edge(edge);
+                            }
+                        }
+                        node_model.remove_node(node_id);
+                        view.remove_node(node_id);
+                        view.update_data();
+                    }
+                }
+            }
+            if (sketch.mouseButton === sketch.CENTER) {
+
+            }
+        }
+
+        sketch.mouseReleased = function () {
+            for (let p5node of view.get_nodes()) {
+                p5node.released();
+            }
+        }
+
+        sketch.mouseDragged = function () {
+            for (let p5node of view.get_nodes()) {
+                p5node.dragged();
+            }
+        }
+
+
+        sketch.setup = function () {
+            canvas = sketch.createCanvas(width, height);
+            canvas.parent(node_id)
+            node_model.set_endpoint("https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql")
+            node_model.set_prefixes(PREFIXES)
+
+            node_model.add_node(node_id).then(() => {
+                view.update_data();
+            })
+        }
+
+        sketch.draw = function () {
+            sketch.clear();
+            view.update_canvas()
+        }
+    }
+
 
     async function sparql(endpoint, query) {
         const url = endpoint +
@@ -163,66 +319,97 @@
     }
 
     async function generateHTML() {
-        await getNodes('dqv:Metric').then(metrics => {
-            const headline = document.createElement('h1');
-            headline.textContent = 'Metrics';
-            document.getElementById('quality-descriptions').appendChild(headline);
-            for (let id of Object.keys(metrics)) {
-                const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description, "quality-element metric");
-                const key_list = [
-                    'id',
-                    'datatype',
-                    'dimension'
-                ];
-                const label_dict = {
-                    'id': 'IRI',
-                    'datatype': 'Expected Datatype',
-                    'dimension': 'Dimension'
-                };
-                const table = buildMetaTable(key_list, label_dict, metrics[id])
-                metric_div.appendChild(table);
-                document.getElementById('quality-descriptions').appendChild(metric_div);
-            }
-        });
-        await getNodes('dqv:Dimension').then(dimensions => {
-            const headline = document.createElement('h1');
-            headline.textContent = 'Dimensions';
-            document.getElementById('quality-descriptions').appendChild(headline);
-            for (let id of Object.keys(dimensions)) {
-                const dimension_div = buildMetaIntro(id, dimensions[id].label, dimensions[id].description, "quality-element dimension");
-                const key_list = [
-                    'id',
-                    'category'
-                ];
-                const label_dict = {
-                    'id': 'IRI',
-                    'category': 'Category'
-                };
-                const table = buildMetaTable(key_list, label_dict, dimensions[id])
-                dimension_div.appendChild(table);
-                document.getElementById('quality-descriptions').appendChild(dimension_div);
-            }
-        });
-        await getNodes('dqv:Category').then(categories => {
-            const headline = document.createElement('h1');
-            headline.textContent = 'Categories';
-            document.getElementById('quality-descriptions').appendChild(headline);
-            for (let id of Object.keys(categories)) {
-                const category_div = buildMetaIntro(id, categories[id].label, categories[id].description, "quality-element category");
-                const key_list = [
-                    'id'
-                ];
-                const label_dict = {
-                    'id': 'IRI'
-                };
-                const table = buildMetaTable(key_list, label_dict, categories[id])
-                category_div.appendChild(table);
-                document.getElementById('quality-descriptions').appendChild(category_div);
-            }
-        });
+        let node_ids = []
+        const metrics = await getNodes('dqv:Metric')
+        node_ids = node_ids.concat(Object.keys(metrics));
+        const headline_m = document.createElement('h1');
+        headline_m.textContent = 'Metrics';
+        document.getElementById('quality-descriptions').appendChild(headline_m);
+        for (let id of Object.keys(metrics)) {
+            const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description, "quality-element metric");
+            const key_list = [
+                'id',
+                'datatype',
+                'dimension'
+            ];
+            const label_dict = {
+                'id': 'IRI',
+                'datatype': 'Expected Datatype',
+                'dimension': 'Dimension'
+            };
+            const table = buildMetaTable(key_list, label_dict, metrics[id])
+            metric_div.appendChild(table);
+            const canvas_div = document.createElement('div')
+            canvas_div.setAttribute('id', id)
+            canvas_div.setAttribute('class', 'p5canvas');
+            metric_div.appendChild(canvas_div)
+            document.getElementById('quality-descriptions').appendChild(metric_div);
+
+        }
+
+        const dimensions = await getNodes('dqv:Dimension')
+        node_ids = node_ids.concat(Object.keys(dimensions));
+        const headline_d = document.createElement('h1');
+        headline_d.textContent = 'Dimensions';
+        document.getElementById('quality-descriptions').appendChild(headline_d);
+        for (let id of Object.keys(dimensions)) {
+            const dimension_div = buildMetaIntro(id, dimensions[id].label, dimensions[id].description, "quality-element dimension");
+            const key_list = [
+                'id',
+                'category'
+            ];
+            const label_dict = {
+                'id': 'IRI',
+                'category': 'Category'
+            };
+            const table = buildMetaTable(key_list, label_dict, dimensions[id])
+            dimension_div.appendChild(table);
+            const canvas_div = document.createElement('div')
+            canvas_div.setAttribute('id', id)
+            canvas_div.setAttribute('class', 'p5canvas');
+            dimension_div.appendChild(canvas_div)
+            document.getElementById('quality-descriptions').appendChild(dimension_div);
+        }
+
+        const categories = await getNodes('dqv:Category')
+        node_ids = node_ids.concat(Object.keys(categories));
+        const headline_c = document.createElement('h1');
+        headline_c.textContent = 'Categories';
+        document.getElementById('quality-descriptions').appendChild(headline_c);
+        for (let id of Object.keys(categories)) {
+            const category_div = buildMetaIntro(id, categories[id].label, categories[id].description, "quality-element category");
+            const key_list = [
+                'id'
+            ];
+            const label_dict = {
+                'id': 'IRI'
+            };
+            const table = buildMetaTable(key_list, label_dict, categories[id])
+            category_div.appendChild(table);
+            const canvas_div = document.createElement('div')
+            canvas_div.setAttribute('id', id);
+            canvas_div.setAttribute('class', 'p5canvas');
+            category_div.appendChild(canvas_div);
+            document.getElementById('quality-descriptions').appendChild(category_div);
+        }
+        return node_ids
     }
 
-    generateHTML()
+    generateHTML().then((node_ids) => {
+        for (let node_id of node_ids) {
+            new p5(new_p5_sketch, node_id)
+            document.getElementById(node_id).addEventListener('selectionchange', function (e) {
+                e.preventDefault();
+            }, false);
+            document.getElementById(node_id).addEventListener('contextmenu', function (e) {
+                e.preventDefault();
+            }, false);
+        }
+    })
+
+
+
+
 
 </script>
 {% block secondary %}{% endblock %}
