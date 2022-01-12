@@ -173,6 +173,7 @@
 
         sketch.setup = function () {
             canvas = sketch.createCanvas(width, height);
+
             canvas.parent(node_id)
             node_model.set_endpoint("https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql")
             node_model.set_prefixes(PREFIXES)
@@ -184,6 +185,16 @@
 
         sketch.draw = function () {
             sketch.clear();
+            sketch.noStroke()
+            sketch.fill(150)
+            sketch.text('... find the controls at the top of this page', width - 230, height - 10)
+            sketch.textAlign(sketch.BOTTOM, sketch.RIGHT)
+            sketch.stroke(100)
+            sketch.strokeWeight(0.5)
+            sketch.line(0, 0, width, 0)
+            sketch.line(width, 0, width, height)
+            sketch.line(width, height, 0, height)
+            sketch.line(0, 0, 0, height)
             view.update_canvas()
         }
     }
@@ -320,31 +331,27 @@
 
     async function generateHTML() {
         let node_ids = []
-        const metrics = await getNodes('dqv:Metric')
-        node_ids = node_ids.concat(Object.keys(metrics));
-        const headline_m = document.createElement('h1');
-        headline_m.textContent = 'Metrics';
-        document.getElementById('quality-descriptions').appendChild(headline_m);
-        for (let id of Object.keys(metrics)) {
-            const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description, "quality-element metric");
+
+        const categories = await getNodes('dqv:Category')
+        node_ids = node_ids.concat(Object.keys(categories));
+        const headline_c = document.createElement('h1');
+        headline_c.textContent = 'Categories';
+        document.getElementById('quality-descriptions').appendChild(headline_c);
+        for (let id of Object.keys(categories)) {
+            const category_div = buildMetaIntro(id, categories[id].label, categories[id].description, "quality-element category");
             const key_list = [
-                'id',
-                'datatype',
-                'dimension'
+                'id'
             ];
             const label_dict = {
-                'id': 'IRI',
-                'datatype': 'Expected Datatype',
-                'dimension': 'Dimension'
+                'id': 'IRI'
             };
-            const table = buildMetaTable(key_list, label_dict, metrics[id])
-            metric_div.appendChild(table);
+            const table = buildMetaTable(key_list, label_dict, categories[id])
+            category_div.appendChild(table);
             const canvas_div = document.createElement('div')
-            canvas_div.setAttribute('id', id)
+            canvas_div.setAttribute('id', id);
             canvas_div.setAttribute('class', 'p5canvas');
-            metric_div.appendChild(canvas_div)
-            document.getElementById('quality-descriptions').appendChild(metric_div);
-
+            category_div.appendChild(canvas_div);
+            document.getElementById('quality-descriptions').appendChild(category_div);
         }
 
         const dimensions = await getNodes('dqv:Dimension')
@@ -369,29 +376,32 @@
             canvas_div.setAttribute('class', 'p5canvas');
             dimension_div.appendChild(canvas_div)
             document.getElementById('quality-descriptions').appendChild(dimension_div);
-        }
-
-        const categories = await getNodes('dqv:Category')
-        node_ids = node_ids.concat(Object.keys(categories));
-        const headline_c = document.createElement('h1');
-        headline_c.textContent = 'Categories';
-        document.getElementById('quality-descriptions').appendChild(headline_c);
-        for (let id of Object.keys(categories)) {
-            const category_div = buildMetaIntro(id, categories[id].label, categories[id].description, "quality-element category");
+        } const metrics = await getNodes('dqv:Metric')
+        node_ids = node_ids.concat(Object.keys(metrics));
+        const headline_m = document.createElement('h1');
+        headline_m.textContent = 'Metrics';
+        document.getElementById('quality-descriptions').appendChild(headline_m);
+        for (let id of Object.keys(metrics)) {
+            const metric_div = buildMetaIntro(id, metrics[id].label, metrics[id].description, "quality-element metric");
             const key_list = [
-                'id'
+                'id',
+                'datatype',
+                'dimension'
             ];
             const label_dict = {
-                'id': 'IRI'
+                'id': 'IRI',
+                'datatype': 'Expected Datatype',
+                'dimension': 'Dimension'
             };
-            const table = buildMetaTable(key_list, label_dict, categories[id])
-            category_div.appendChild(table);
+            const table = buildMetaTable(key_list, label_dict, metrics[id])
+            metric_div.appendChild(table);
             const canvas_div = document.createElement('div')
-            canvas_div.setAttribute('id', id);
+            canvas_div.setAttribute('id', id)
             canvas_div.setAttribute('class', 'p5canvas');
-            category_div.appendChild(canvas_div);
-            document.getElementById('quality-descriptions').appendChild(category_div);
+            metric_div.appendChild(canvas_div)
+            document.getElementById('quality-descriptions').appendChild(metric_div);
         }
+
         return node_ids
     }
 
