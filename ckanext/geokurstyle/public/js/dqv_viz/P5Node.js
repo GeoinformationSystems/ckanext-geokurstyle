@@ -47,7 +47,7 @@ class P5Node {
         let distance = this.sketch.dist(this.sketch.mouseX, this.sketch.mouseY, this.x, this.y);
         if (distance < this.r) {
             this.drag = false;
-            window.open(this.id);
+            window.location = this.id;
         }
     }
 
