@@ -43,7 +43,7 @@
             class='fa fa-plus-square'></i> Add Metric</a>
     {% endif %}
     <br /><br /><br />
-
+    <!-- 
     <p>
         Below every description, an interactive visualization can be found. Controls are as follows:
     <ul>
@@ -52,7 +52,7 @@
         <li>Strg plus left click on a node: Go to this nodes description in a new browser window</li>
         <li>Right click on a node: Remove this node from the visualization (careful; removing the last node requires
             reloading to bring it back)</li>
-    </ul>
+    </ul> -->
 
 
     </p>
@@ -186,9 +186,10 @@
         sketch.draw = function () {
             sketch.clear();
             sketch.noStroke()
-            sketch.fill(150)
-            sketch.text('... find the controls at the top of this page', width - 230, height - 10)
-            sketch.textAlign(sketch.BOTTOM, sketch.RIGHT)
+            sketch.fill(180)
+            let controls = 'Double left click on a node: Expand this node\nLeft click and hold a node: Drag this node\nStrg plus left click on a node: Go to this nodes description\nRight click on a node: Remove this node from the visualization\n (careful; removing the last node requires reloading to bring it back)'
+            sketch.textAlign(sketch.RIGHT, sketch.BOTTOM)
+            sketch.text(controls, width - 8, height - 8)
             sketch.stroke(100)
             sketch.strokeWeight(0.5)
             sketch.line(0, 0, width, 0)
