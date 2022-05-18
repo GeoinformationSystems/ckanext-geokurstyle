@@ -10,6 +10,7 @@
 <script src="{% url_for_static 'js/dqv_viz/View.js' %}"></script>
 <script src="{% url_for_static 'js/dqv_viz/P5Node.js' %}"></script>
 <script src="{% url_for_static 'js/dqv_viz/P5ArrowConnector.js' %}"></script>
+<script src="{% url_for_static 'js/dqv_viz/color_transformations.js' %}"></script>
 
 <link rel="stylesheet" href="{% url_for_static 'js/dqv_viz/p5.css' %}">
 
@@ -43,6 +44,9 @@
             class='fa fa-plus-square'></i> Add Metric</a>
     {% endif %}
     <br /><br /><br />
+
+    <div id="https://geokur-dmp.geo.tu-dresden.de/quality-register#qualityRegister" class="p5canvas"></div>
+    <br /><br /><br />
     <!-- 
     <p>
         Below every description, an interactive visualization can be found. Controls are as follows:
@@ -54,21 +58,19 @@
             reloading to bring it back)</li>
     </ul> -->
 
-
-    </p>
+    <!-- 
+    </p> -->
 
     <div id='quality-descriptions' style='margin-bottom: 150px;'>
     </div>
 </div>
 <script>
     function new_p5_sketch(sketch, div) {
-        const node_id = sketch._userNode
-
+        // const node_id = sketch._userNode
         const PREFIXES = [
             'PREFIX dqv: <http://www.w3.org/ns/dqv#>',
             'PREFIX dct: <http://purl.org/dc/terms/>',
             'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>',
-            'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
             'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>',
             'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>',
             'PREFIX gkq: <https://geokur-dmp.geo.tu-dresden.de/quality-register#>'
@@ -76,30 +78,56 @@
 
         const PREDICATES = [
             'dqv:inDimension',
-            'dqv:inCategory'
-        ]
+            'dqv:inCategory',
+            'gkq:inRegister'
+        ];
+
+        const endpoint = "https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql";
+        const initial_node = 'https://geokur-dmp.geo.tu-dresden.de/quality-register#qualityRegister';
 
 
-        const width = document.getElementById('quality-descriptions').offsetWidth
-        let height = 450
+        node_colors = {
+            "http://www.w3.org/ns/dqv#Category": 'rgb(123, 169, 255)',
+            "http://www.w3.org/ns/dqv#Dimension": 'rgb(255, 167, 132)',
+            "http://www.w3.org/ns/dqv#Metric": 'rgb(76, 240, 166)'
+        };
+
+        const radius = 25;
+
+        let hover = true;
+        let on_canvas = false;
+
+        const width = document.getElementById("https://geokur-dmp.geo.tu-dresden.de/quality-register#qualityRegister").offsetWidth;
+        const height = 800;
         const horizontal_margin = width / 5;
         const vertical_margin = height / 5;
-        const radius = 20;
+
+        const node_model = new Model();
+        const view = new View(sketch);
+
+        // 
+        let canvas;
+        let inconsolata;
+        let open_sans_light_italic;
+        let left_clicked_x;
+        let left_clicked_y;
+        let coords_old = {};
+        let clicked_node;
         let strg_pressed = false;
 
-        const node_model = new Model(sketch);
-        const view = new View(node_model, width, height, horizontal_margin, vertical_margin, radius, sketch)
 
 
         sketch.doubleClicked = function () {
-            for (let p5node of view.get_nodes()) {
-                let node_id = p5node.double_clicked();
-                if (node_id) {
-                    for (let predicate of PREDICATES) {
-                        node_model.expand_node(node_id, predicate).then(() => {
-                            // view.update_data(exclude_node_id = node_id);
-                            view.update_data();
-                        })
+            if (on_canvas) {
+                for (let p5node of view.get_nodes()) {
+                    let node_id = p5node.double_clicked();
+                    if (node_id) {
+                        for (let predicate of PREDICATES) {
+                            node_model.expand_node(node_id, predicate).then(() => {
+                                // view.update_data(exclude_node_id = node_id);
+                                view.update_data();
+                            })
+                        }
                     }
                 }
             }
@@ -116,89 +144,199 @@
             strg_pressed = false;
         }
 
+        sketch.mousePressed = function (event) {
 
-        sketch.mousePressed = function () {
-            if (sketch.mouseButton === sketch.LEFT) {
-                for (let p5node of view.get_nodes()) {
-                    p5node.left_clicked();
-                }
-                if (strg_pressed) {
-                    strg_pressed = false;
-
+            if (on_canvas) {
+                hover = false;
+                if (sketch.mouseButton === sketch.LEFT) {
+                    clicked_node = false;
                     for (let p5node of view.get_nodes()) {
-                        p5node.strg_plus_left_clicked();
+                        if (p5node.left_clicked()) clicked_node = true;
                     }
-                }
+                    if (strg_pressed) {
+                        strg_pressed = false;
 
-            }
-            if (sketch.mouseButton === sketch.RIGHT) {
-                for (let p5node of view.get_nodes()) {
-                    let node_id = p5node.right_clicked();
-                    if (node_id) {
-                        let edges = node_model.get_edges()
-                        // delete all nodes and edges
-                        for (let i = edges.length - 1; i >= 0; i--) {
-                            let edge = edges[i]
-                            if (
-                                (edge.from == node_id)
-                                ||
-                                (edge.to == node_id)
-                            ) {
-                                node_model.remove_edge(edge);
-                            }
+                        for (let p5node of view.get_nodes()) {
+                            p5node.strg_plus_left_clicked();
                         }
-                        node_model.remove_node(node_id);
-                        view.remove_node(node_id);
-                        view.update_data();
+                    }
+                    left_clicked_x = sketch.mouseX;
+                    left_clicked_y = sketch.mouseY;
+                    for (let p5node of view.get_nodes()) {
+                        coords_old[p5node.get_id()] = {
+                            'x': p5node.get_x(),
+                            'y': p5node.get_y()
+                        }
+                    }
+
+                }
+                if (sketch.mouseButton === sketch.RIGHT) {
+
+                }
+                if (sketch.mouseButton === sketch.CENTER) {
+                    // delete node and in- and outgoing edges
+                    for (let p5node of view.get_nodes()) {
+                        let node_id = p5node.right_clicked();
+                        if (node_id) {
+                            let edges = node_model.get_edges()
+
+                            for (let i = edges.length - 1; i >= 0; i--) {
+                                let edge = edges[i]
+                                if (
+                                    (edge.from == node_id)
+                                    ||
+                                    (edge.to == node_id)
+                                ) {
+                                    node_model.remove_edge(edge);
+                                }
+                            }
+                            node_model.remove_node(node_id);
+                            view.remove_node(node_id);
+                            view.update_data();
+                        }
                     }
                 }
-            }
-            if (sketch.mouseButton === sketch.CENTER) {
-
             }
         }
 
         sketch.mouseReleased = function () {
+            // stop dragging
+            hover = true;
             for (let p5node of view.get_nodes()) {
                 p5node.released();
             }
         }
 
         sketch.mouseDragged = function () {
+            if (on_canvas) {
+                // drag node or canvas
+                for (let p5node of view.get_nodes()) {
+                    p5node.dragged()
+                }
+                if (!(clicked_node)) {
+                    view.translate_nodes(left_clicked_x, left_clicked_y, coords_old)
+                }
+            }
+        }
+
+        sketch.mouseWheel = function (event) {
+            if (on_canvas) {
+                event.preventDefault();
+                if (on_canvas) {
+                    // zoom in or out
+                    if (event.delta < 0) {
+                        view.zoom_in()
+                    }
+                    else {
+                        view.zoom_out()
+                    }
+                }
+            }
+        }
+
+        function enable_hover() {
             for (let p5node of view.get_nodes()) {
-                p5node.dragged();
+                p5node.hover();
             }
         }
 
 
-        sketch.setup = function () {
-            canvas = sketch.createCanvas(width, height);
-
-            canvas.parent(node_id)
-            node_model.set_endpoint("https://geokur-dmp2.geo.tu-dresden.de/fuseki/geokur_quality_register/sparql")
-            node_model.set_prefixes(PREFIXES)
-
-            node_model.add_node(node_id).then(() => {
-                view.update_data();
-            })
-        }
-
-        sketch.draw = function () {
-            sketch.clear();
-            sketch.noStroke()
-            sketch.fill(180)
-            let controls = 'Double left click on a node: Expand this node\nLeft click and hold a node: Drag this node\nStrg plus left click on a node: Go to this nodes description\nRight click on a node: Remove this node from the visualization\n (careful; removing the last node requires reloading to bring it back)'
+        function print_controls() {
+            sketch.textFont(inconsolata);
+            let controls = 'Double left click on a node: Expand this node\nLeft click and hold a node: Drag this node\nStrg plus left click on a node: Go to this nodes IRI\nWheel click on a node: Remove this node from the visualization\n (careful; removing the last node requires reloading the page)'
             sketch.textAlign(sketch.RIGHT, sketch.BOTTOM)
             sketch.text(controls, width - 8, height - 8)
-            sketch.stroke(100)
-            sketch.strokeWeight(0.5)
+            sketch.fill(150)
             sketch.line(0, 0, width, 0)
             sketch.line(width, 0, width, height)
             sketch.line(width, height, 0, height)
             sketch.line(0, 0, 0, height)
-            view.update_canvas()
         }
+
+        sketch.preload = function () {
+            inconsolata = sketch.loadFont('js/dqv_viz/assets/Inconsolata.otf');
+            open_sans_light_italic = sketch.loadFont('js/dqv_viz/assets/OpenSans-LightItalic.ttf')
+            open_sans_light = sketch.loadFont('js/dqv_viz/assets/OpenSans-Light.ttf')
+
+
+            // for (let colorized_class of Object.keys(node_colors)) {
+            //   node_colors[colorized_class] = color(node_colors[colorized_class])
+            // }
+        }
+
+        sketch.setup = function () {
+            canvas = sketch.createCanvas(width, height);
+            canvas.mouseOver(() => {
+                for (let p5node of view.get_nodes()) {
+                    let id = p5node.hover();
+                }
+                on_canvas = true;
+            })
+            canvas.mouseOut(() => {
+                on_canvas = false;
+            })
+            node_model.set_endpoint(endpoint);
+            node_model.set_prefixes(PREFIXES);
+
+            view.init(
+                node_model,
+                width,
+                height,
+                horizontal_margin,
+                vertical_margin,
+                radius,
+                node_colors,
+                inconsolata,
+                open_sans_light);
+
+
+            node_model.add_node(initial_node).then(() => {
+                view.update_data();
+            })
+
+
+            // view.switch_mode()
+
+
+        }
+
+
+        sketch.draw = function () {
+
+
+            // background('white');
+            sketch.clear();
+            sketch.stroke(150)
+            sketch.strokeWeight(1)
+            sketch.noFill()
+            sketch.rect(0, 0, width, height)
+            view.update_canvas()
+
+            if (hover) enable_hover();
+
+            print_controls();
+
+            // for (let p5arrowConnector of p5arrowConnectors) {
+            //   p5arrowConnector.show();
+            // }
+            // for (let p5node of Object.values(p5nodes)) {
+            //   p5node.show();
+            // }
+
+        }
+
     }
+    let node_id = "https://geokur-dmp.geo.tu-dresden.de/quality-register#qualityRegister"
+    new p5(new_p5_sketch, node_id)
+    document.getElementById(node_id).addEventListener('selectionchange', function (e) {
+        e.preventDefault();
+    }, false);
+
+    // document.getElementById(node_id).addEventListener('contextmenu', function (e) {
+    //     e.preventDefault();
+    // }, false);
+</script>
+<script>
 
 
     async function sparql(endpoint, query) {
@@ -348,10 +486,6 @@
             };
             const table = buildMetaTable(key_list, label_dict, categories[id])
             category_div.appendChild(table);
-            const canvas_div = document.createElement('div')
-            canvas_div.setAttribute('id', id);
-            canvas_div.setAttribute('class', 'p5canvas');
-            category_div.appendChild(canvas_div);
             document.getElementById('quality-descriptions').appendChild(category_div);
         }
 
@@ -372,10 +506,7 @@
             };
             const table = buildMetaTable(key_list, label_dict, dimensions[id])
             dimension_div.appendChild(table);
-            const canvas_div = document.createElement('div')
-            canvas_div.setAttribute('id', id)
-            canvas_div.setAttribute('class', 'p5canvas');
-            dimension_div.appendChild(canvas_div)
+
             document.getElementById('quality-descriptions').appendChild(dimension_div);
         } const metrics = await getNodes('dqv:Metric')
         node_ids = node_ids.concat(Object.keys(metrics));
@@ -396,27 +527,14 @@
             };
             const table = buildMetaTable(key_list, label_dict, metrics[id])
             metric_div.appendChild(table);
-            const canvas_div = document.createElement('div')
-            canvas_div.setAttribute('id', id)
-            canvas_div.setAttribute('class', 'p5canvas');
-            metric_div.appendChild(canvas_div)
+
             document.getElementById('quality-descriptions').appendChild(metric_div);
         }
 
         return node_ids
     }
 
-    generateHTML().then((node_ids) => {
-        for (let node_id of node_ids) {
-            new p5(new_p5_sketch, node_id)
-            document.getElementById(node_id).addEventListener('selectionchange', function (e) {
-                e.preventDefault();
-            }, false);
-            document.getElementById(node_id).addEventListener('contextmenu', function (e) {
-                e.preventDefault();
-            }, false);
-        }
-    })
+    generateHTML()
 
 
 

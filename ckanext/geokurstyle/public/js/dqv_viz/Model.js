@@ -41,6 +41,23 @@ class Model {
         return label;
     }
 
+
+    async get_node_description(node) {
+        let select = [
+            'SELECT ?description WHERE {',
+            'OPTIONAL {<' + node + '> skos:definition ?description. }',
+            '}'
+        ]
+        select = this.prefixes.concat(select).join(' ');
+        const response = await this.sparql(select)
+        let node_description = null
+        for (let binding of response.results.bindings) {
+            if (binding.description) node_description = binding.description.value
+        }
+
+        return node_description;
+    }
+
     async get_node_class(node) {
         let select = [
             'SELECT ?class WHERE {',
@@ -49,17 +66,15 @@ class Model {
         ]
         select = this.prefixes.concat(select).join(' ');
         const response = await this.sparql(select)
-        let node_class = null
+        let node_class = []
         for (let binding of response.results.bindings) {
-            if (binding.class) node_class = binding.class.value
+            if (binding.class) node_class.push(binding.class.value)
         }
-
         return node_class;
     }
 
     async get_parents(node, predicate) {
         const nodes = []
-
         let select = [
             'SELECT ?newNode WHERE {',
             '?newNode ' + predicate + ' <' + node + '>.',
@@ -67,16 +82,12 @@ class Model {
         ];
         select = this.prefixes.concat(select).join(' ');
         const response = await this.sparql(select)
-
-
         for (let binding of response.results.bindings) {
             let json = {}
-
             json.id = binding.newNode.value
             json.label = await this.get_node_label(json.id)
+            json.description = await this.get_node_description(json.id)
             json.class = await this.get_node_class(json.id)
-
-
             nodes.push(json)
         }
         return nodes
@@ -84,7 +95,6 @@ class Model {
 
     async get_children(node, predicate) {
         const nodes = []
-
         let select = [
             'SELECT ?newNode WHERE {',
             '<' + node + '> ' + predicate + ' ?newNode.',
@@ -92,15 +102,12 @@ class Model {
         ];
         select = this.prefixes.concat(select).join(' ');
         const response = await this.sparql(select)
-
-
         for (let binding of response.results.bindings) {
             let json = {}
-
             json.id = binding.newNode.value
             json.label = await this.get_node_label(json.id)
+            json.description = await this.get_node_description(json.id)
             json.class = await this.get_node_class(json.id)
-
             nodes.push(json)
         }
         return nodes
@@ -118,11 +125,13 @@ class Model {
         reference[node_id] = {
             'id': node_id,
             'label': node_label,
+            'description': await this.get_node_description(node_id),
             'class': await this.get_node_class(node_id)
         }
 
         let edge_label = await this.get_node_label(predicate)
         if (!edge_label) edge_label = predicate
+
         for (let parent of parents) {
             edges.push({ from: parent.id, to: node_id, label: edge_label })
             reference[parent.id] = {}
@@ -130,6 +139,7 @@ class Model {
             let parent_label = parent.label
             if (!parent_label) parent_label = parent.id
             reference[parent.id].label = parent_label;
+            reference[parent.id].description = parent.description;
             reference[parent.id].class = parent.class;
             expanded_nodes_ids.push(parent.id)
         }
@@ -140,6 +150,7 @@ class Model {
             let child_label = child.label
             if (!child_label) child_label = child.id
             reference[child.id].label = child_label;
+            reference[child.id].description = child.description;
             reference[child.id].class = child.class;
             expanded_nodes_ids.push(child.id)
         }
@@ -158,6 +169,7 @@ class Model {
         reference[node_id] = {
             'id': node_id,
             'label': node_label,
+            'description': await this.get_node_description(node_id),
             'class': await this.get_node_class(node_id)
         }
         this.add_data(reference, []);
@@ -186,6 +198,9 @@ class Model {
         // console.log(this.graph_meta)
         // console.log(this.graph_edges)
 
+
+
+
         for (let node_id of Object.keys(this.graph_meta)) {
             dagre_graph.setNode(node_id, {})
         }
@@ -195,7 +210,6 @@ class Model {
         }
 
         dagre.layout(dagre_graph)
-
 
         let max_x = 0;
         let max_y = 0;
